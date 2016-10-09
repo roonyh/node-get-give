@@ -116,3 +116,137 @@ const fs = require('fs');
 const moduleJs = fs.readFileSync('./hello.js');
 vm.runInThisContext(moduleJs);
 ```
+
+The `get`
+
+The tool now can run the JavaScript in the file `hello.js`. I will now add the `get` global to it so `hello.js` can load JavaScript from other files as well.
+
+I will define this function inside node-get-give.js but I intend to use it inside hello.js and any other file that hello.js is going to load. Or shall we say require `get`?
+
+One way to make it available to those later loaded modules is adding it to the context that `runInThisContext` uses. So we need to define it inside the global state of `node-get-give.js`. Defining it in following way does not work because that defines the get method in the local state of `node-get-give.js`
+
+const get = () => {
+  ...
+}
+
+In the last years JavaScript (ES5) omitting `const` or `var` would have worked but this year following is the way to define a global function.
+
+```js
+global.get = filename => {
+  const loadedJS = fs.readFileSync(filename)
+  vm.runInThisContext(loadedJS);
+}
+```
+
+With that my `node-get-give.js` would like this.
+
+```js
+const vm = require('vm');
+const fs = require('fs');
+
+global.get = filename => {
+  const loadedJS = fs.readFileSync(filename)
+  vm.runInThisContext(loadedJS);
+}
+
+global.get(process.argv[2])
+```
+
+To demonstrate `node-get-give`'s current capabilities I will `get` a file named dog.js and from withing this dog.js I will get another file named cat.js. All files contain some stupid console.log statement.
+
+```js
+// hello.js
+console.log('hello world!');
+get('./dog.js')
+```
+
+```js
+// dog.js
+console.log('hello, I am a dog.')
+get('./cat.js')
+```
+
+```js
+// cat.js
+console.log('hello, I am a cat.')
+```
+
+Run `node node-get-give.js hello.js`; Aaaand...
+
+```
+[aruna@mbp ~/experiments/node-get-give (master *)]$ node index.js hello.js
+hello world!
+hello, I am a dog.
+hello, I am a cat.
+```
+
+Success!
+
+Module scope
+
+We already came across scopes of the module `node-get-give.js`. It has a local scope and a global scope. I defined `get` on its global scope.
+
+But what about the modules that I load via `get`? Does `dog.js` and `cat.js` have global and local scopes?
+
+To investigate this, I will define a variable named `name` in each of these modules.
+
+```js
+// dog.js
+const name = 'Tom'
+console.log(`hello, I am a dog named ${name}`);
+```
+
+```js
+// cat.js
+const name = 'Jerry'
+console.log(`hello, I am a cat named ${name}`);
+```
+
+I will `get` both files in `hello.js`
+
+```js
+console.log('hello world!');
+get('./dog.js')
+get('./cat.js')
+```
+
+Aaaand run it.
+
+hello world!
+hello, I am a dog named Tom
+evalmachine.<anonymous>:1
+const name = 'Jerry'
+^
+
+TypeError: Identifier 'name' has already been declared.
+
+Code in `cat.js` and `dog.js` runs in the same scope. Just because they live in two separate files does not make them run in scopes of their own. This problem can be traced to this line from `node-get-give.js`.
+
+
+Every single module that will be loaded using our module system will go through this line. So every single module will be run in the context of `node-get-give.js`.
+
+The problem of scopes in JavaScript is well discussed over many years. function and classes are the only items that have scopes in JavaScript. So to give these modules their own scope I'll have to stick them inside one of those.
+
+Here is how I put code from each module inside a function.
+
+```js
+const wrap = moduleJS => (
+  `(() => {${moduleJS}})()` // wrapping moduleJS ins a self calling arrow function
+)
+
+global.get = filename => {
+  const loadedJS = fs.readFileSync(filename);
+  const wrappedJS = wrap(loadedJS)
+  vm.runInThisContext(wrappedJS);
+}
+```
+
+Now running my command for `node-get-give` gives me the desired output.
+
+```sh
+[aruna@mbp ~/experiments/node-get-give (master *)]$ node index.js hello.js
+hello world!
+hello, I am a dog named Tom
+hello, I am a cat named Jerry
+```
+
