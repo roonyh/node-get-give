@@ -443,6 +443,75 @@ This completes my new module system and I feel quite clever!
 
 Here are the files from my example project updated to demonstrate the latest features of `node-get`.
 
+```js
+// utils/capitalize.js
+// Lifted from stackoverflow: http://stackoverflow.com/a/7592235/1150725
+const capitalize = text => {
+    return text.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+}
+give(capitalize)
+```
+
+```js
+// cat.js
+const capitalize = get('./utils/capitalize.js')
+const name = 'Jerry'
+give(capitalize(`hello, I am a cat named ${name}`));
+```
+
+```js
+// mouse.js
+const capitalize = get('./utils/capitalize.js')
+const name = 'Jerry'
+give(capitalize(`hello, I am a mouse named ${name}`));
+```
+
+```js
+// hello.js
+console.log('hello world!');
+
+dogText = get('./dog.js');
+console.log(dogText);
+
+catText = get('./cat.js');
+console.log(catText);
+```
+
+```js
+// node-get.js
+const vm = require('vm');
+const fs = require('fs');
+const path = require('path');
+
+const wrap = moduleJS => (
+  `((get, give) => {${moduleJS}})`
+)
+
+const createGet = parent => {
+  return filename => {
+    const parentsDirectory = path.dirname(parent);
+    const filepath = path.resolve(parentsDirectory, filename); // Paths resolved relative to parent's directory
+    const loadedJS = fs.readFileSync(filepath);
+    const wrappedJS = wrap(loadedJS)
+    const newModule = vm.runInThisContext(wrappedJS);
+
+    const newGet = createGet(filepath);
+
+    let givenValue;
+    const newGive = value => { givenValue = value }
+
+    newModule(newGet, newGive);
+
+    return givenValue;
+  }
+}
+
+// The entry point to the app does not have a parent. So we create an artificial one.
+const rootParent = path.join(process.cwd(), '__main__');
+const rootGet = createGet(rootParent);
+rootGet(process.argv[2])
+```
+
 ## Comparison with Node.js module system
 
 Node.js module system is 100% equivalent to the module system I just built. That's because before building `node-get` here I peeked into Node.js source and inspected how it is implemented :)

@@ -1,5 +1,5 @@
 {
-  "name": "node-get-give",
+  "name": "@roonyh/node-get",
   "version": "0.0.0",
   "description": "A useless new module system for node js",
   "main": "index.js",
@@ -8,16 +8,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/roonyh/node-get-give.git"
+    "url": "git+https://github.com/roonyh/node-get.git"
   },
   "keywords": [
     "module",
     "system"
   ],
-  "author": "Aruna Herath <aruna@kadira.io> (http://www.arunaherath.com)",
+  "author": "Aruna Herath <arunabherath@gmail.com> (http://www.arunaherath.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/roonyh/node-get-give/issues"
+    "url": "https://github.com/roonyh/node-get/issues"
   },
-  "homepage": "https://github.com/roonyh/node-get-give#readme"
+  "homepage": "https://github.com/roonyh/node-get#readme",
+  "directories": {
+    "doc": "doc",
+    "example": "example"
+  }
 }
