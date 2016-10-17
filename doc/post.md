@@ -2,7 +2,7 @@ Node.js does not need a new module system. Its existing implementation of a Comm
 
 ### How it will work
 
-I name this new module system `node-get` because `get` is the global used to load new modules with it. There's an executable named `node-get` that can be installed using `npm -g @roonyh/node-get`. You can run it just like the `node` executable.
+I name this new module system `node-get` because `get` is the global used to load new modules with it. There's an executable named `node-get` that can be installed using `npm -g node-get-modules`. You can run it just like the `node` executable.
 
 ```
 $ node-get hello.js
