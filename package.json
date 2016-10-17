@@ -1,6 +1,6 @@
 {
   "name": "node-get-modules",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A useless new module system for node js",
   "main": "index.js",
   "scripts": {
