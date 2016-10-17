@@ -352,9 +352,10 @@ const createGet = caller => {
 
 When a `get` is passed a relative file path, it is resolved relative to the `get` function's `caller`s location.
 
-Heres how `node-get.js` look now.
+Heres the latest `node-get.js`.
 
 ```js
+// node-get.js
 cconst vm = require('vm');
 const fs = require('fs');
 const path = require('path');
@@ -481,7 +482,7 @@ catText = get('./cat.js');
 console.log(catText);
 ```
 
-Here is completed `node-get.js`.
+Here is the completed `node-get.js`.
 
 ```js
 // node-get.js
@@ -518,7 +519,7 @@ const rootGet = createGet(rootParent);
 rootGet(process.argv[2])
 ```
 
-I'll run it one last time.
+I'll run `node-get` one last time.
 
 ```
 $ node node-get.js example/hello.js
@@ -529,11 +530,11 @@ Hello, I Am A Mouse Named Jerry
 
 ### Comparison with Node.js module system
 
-Node.js module system is 100% equivalent to the module system I just built. That's because before building `node-get` here I peeked into Node.js source and inspected how it is implemented :)
+Node.js module system works very similar to the module system I just built.
 
-* Node.js module system reads new module using `fs.readFileSync` and uses `vm.runInThisContext` function just like the way we used it.
+* Node.js module system reads a new module using `fs.readFileSync` and executes its JavaScript using `vm.runInThisContext` just the way `node-get` does.
 
-* It also wraps JavaScript files inside a wrapperFunction to give them a local scope. In fact, this wrapper can be looked at using the "module" module. Let me show.
+* It also wraps JavaScript files inside a [wrapperFunction](https://nodejs.org/api/modules.html#modules_the_module_wrapper) to give them a local scope. In fact, this wrapper can be looked at using the `module` module. Let me show.
 
 ```
 $ node
@@ -544,18 +545,20 @@ $ node
 
 See that its signature is quite similar to node-get's wrapper function's.
 
-* It also has a `require` specific to each module and uses this fact to resolve relative paths relative to the modules location
+* It also has a `require` function specific to each module and uses this fact to resolve relative paths relative to the module's location
+
+These similarities are there because `node-get` is built using the understanding I got of Node.js module system by going throgh its source.
 
 And of course, Node.js module system have many additional features as well.
 
 * When a module is `require`d, it is cached. So later `require`s to the same module will be faster. This also means that they act as singletons. (A module is executed only once)
-* It has `node_modules`. When `require` is called with an absolute path it has a mechanism for resolving it.
+* It has `node_modules`. When `require` is called with an absolute path it looks in several locations including a `node_modules` directory in the root of the project.
 * You can `require` JSON files with it.
 
 These features are not that complex. I bet you could think of ways to implement them into `node-get` if needed.
 
 This excercise helped me to get some subtle understanding of Node.js. I hope you enjoyed reading about it.
 
-Despite what the world says I really think that JavaScript is alright. I love Node.js for allowing me to do a great many things with it.
+Despite what is commonly said, I really think that JavaScript is alright. I love Node.js for allowing me to do a great many things with it.
 
 I plan to hack deep into Node.js, and write about my experiments with it. Stay tuned!
