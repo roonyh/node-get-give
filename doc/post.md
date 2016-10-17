@@ -8,7 +8,7 @@ I name this new module system `node-get` because `get` is the global used to loa
 $ node-get hello.js
 ```
 
-Where `hello.js` is a JavaScript file that uses `node-get` module system. Here is an example.
+Where `hello.js` is a JavaScript file that uses `node-get` module system. Here's an example.
 
 ```js
 // hello.js
@@ -27,16 +27,16 @@ I am using Node.js version 6 to build `node-get` so the code here uses ES6 synta
 
 ### `vm` module
 
-First, I want to introduce you the [`vm` module](https://nodejs.org/api/vm.html) from Node.js. `vm`'s responsibility in Node.js is executing JavaScript. Every single JavaScript file you write in your Node.js app must contact this module at some point to have it executed.
+First, I want to introduce you the [`vm` module](https://nodejs.org/api/vm.html) from Node.js. `vm`'s responsibility is executing JavaScript. Every single JavaScript file you write in your Node.js app must contact this module at some point to have it executed.
 
 `vm` provides two methods to facilitate this.
 
 * vm.runInNewContext(someJSCode, theNewContext)
 * vm.runInThisContext(someJSCode)
 
-*Context* in these methods refer to the global state. Both methods run the JavaScript code stored in string variable `someJSCode`.
+*Context* in these methods refer to the global state. Both methods execute the JavaScript code stored in string variable `someJSCode`. They differ only by the global variables they allow `someJSCode` to use.
 
-`runInThisContext` makes a brand new set of variables and functions using its second parameter `theNewContext` object and makes them available to `someJSCode` as globals.
+`runInThisContext` makes a brand new set of variables and functions using entries in `theNewContext` object and makes them available to `someJSCode` as globals.
 
 `runInThisContext` makes all the globals available to the script that runs it, to be available to `someJSCode` as well.
 
@@ -52,10 +52,10 @@ The Node.js module system, with `require` and `exports`, does just that and so w
 
 I'll start to code; feel free to follow along if you like.
 
-First I will create two files.
+First I'll create two files.
 
 `node-get.js` will contain the actual code of `node-get`, my new module system.
-`hello.js` will contain the JavaScript code that we will run using node-get. It will demonstrate the features of `node-get`
+`hello.js` will contain the JavaScript code that I will run using node-get. It will demonstrate the features of `node-get`
 
 I'll put some code in hello.js.
 
@@ -64,7 +64,7 @@ I'll put some code in hello.js.
 console.log('hello world!');
 ```
 
-I'll start `node-get.js` with following code. Its using `runInNewContext` from the `vm` module.
+I'll start `node-get.js` with following code. It's using `runInNewContext` from the `vm` module.
 
 ```js
 const vm = require('vm');
@@ -108,7 +108,7 @@ context = {console}; // Now contex has a console
 vm.runInNewContext(moduleJs, context);
 ```
 
-This does work, But `console` is not the only global that we may use in our modules. There is a [whole list of them](https://nodejs.org/api/globals.html) documented in Node.js documentation. `process`, `require`, `exports`, to name a few.
+This does work for now, But `console` is not the only global that we may use in our modules. There is a [whole list of them](https://nodejs.org/api/globals.html) documented in Node.js documentation. `process`, `Buffer`, `setTimeout`, to name a few.
 
 So if I want to pass in all the globals I'll have to do something like,
 
@@ -126,8 +126,6 @@ const moduleJs = fs.readFileSync('./hello.js');
 vm.runInThisContext(moduleJs);
 ```
 
-### The `get`
-
 `hello.js` now have access to any global available to `node-get.js`. It works now!
 
 ```
@@ -135,11 +133,13 @@ vm.runInThisContext(moduleJs);
 hello world!
 ```
 
-I will now add the `get` global to it so `hello.js` can load JavaScript from other files as well.
+### The `get`
 
-I will define this function inside `node-get.js` but I intend to use it inside `hello.js` and inside any other file that `hello.js` might *load*(`get`).
+I will now add the `get` global so `hello.js` can load JavaScript from other files as well.
 
-One way to make it available to those later loaded modules is adding it to the context that `runInThisContext` uses; the context of `node-get.js`. So we need to define it inside the globals of `node-get.js`.
+I will define this function inside `node-get.js` but I intend to use it inside `hello.js` and inside any other module that `hello.js` might load(`get`).
+
+Remember that any global available to `node-get.js` is available to JavaScript code that goes through `runInThisContext`. So we need to define `get` as a global inside `node-get.js`.
 
 ```js
 global.get = filename => {
@@ -163,9 +163,11 @@ global.get = filename => {
 global.get(process.argv[2])
 ```
 
-Note: I am using `process.argv[2]` instead of hardcoded `hello.js`.
+Note that I am using `process.argv[2]` to get the entry point to the app instead of hardcoded `hello.js`.
 
-To demonstrate `node-get`'s current capabilities I will `get` a file named `cat.js` and from within this `cat.js` I will `get` another file named `mouse.js`. All files contain some dumb `console.log` statement.
+This entry point module have access to `get` as a global and any module that's loaded using `get('any JS file')` will to. So recursively any module in the example project can use get.
+
+To demonstrate these capabilities of `node-get`, from `hello.js` I will `get` a file named `cat.js` and from within this `cat.js` I will `get` another file named `mouse.js`. All files contain some dumb `console.log` statement.
 
 ```js
 // hello.js
@@ -189,8 +191,8 @@ Run `node node-get.js hello.js`; Aaaand...
 ```
 [aruna@mbp ~/experiments/node-get]$ node index.js hello.js
 hello world!
-hello, I am a dog.
 hello, I am a cat.
+hello, I am a mouse.
 ```
 
 Success!
@@ -212,12 +214,12 @@ const name = 'Jerry'
 console.log(`hello, I am a mouse named ${name}`);
 ```
 
-This time, I will `get` both files in `hello.js`
+This time, I will `get` both modules in `hello.js`
 
 ```js
 // hello.js
 console.log('hello world!');
-get('./dog.js')
+get('./cat.js')
 get('./mouse.js')
 ```
 
@@ -226,7 +228,7 @@ Aaaand run it.
 ```
 [aruna@mbp ~/experiments/node-get]$ node node-get.js hello.js
 hello world!
-hello, I am a dog named Tom
+hello, I am a cat named Tom
 evalmachine.<anonymous>:1
 const name = 'Jerry'
 ^
@@ -262,18 +264,18 @@ global.get = filename => {
 
 Now contents of the loaded module are put inside a function. This function calls itself.
 
-This fixes `node-get` and gives me the desired output.
+This fixes `node-get`'s scope problem so I get the desired output.
 
 ```
 $ node node-get.js hello.js
 hello world!
-hello, I am a dog named Tom
-hello, I am a cat named Jerry
+hello, I am a cat named Tom
+hello, I am a mouse named Jerry
 ```
 
 ### `get` relative paths
 
-So now my module system is working pretty well. Currently, my Hello-Tom&Jerry project's and `node-get`s files are all in the same directory. I'll tidy up things a bit by moving the example project's files into a directory named example.
+So now my module system is working pretty well. Currently, my Hello-Tom&Jerry project's and `node-get`s files are all in the same directory. I'll tidy up things a bit by moving the example project's files into a directory aptly named 'example'.
 ```
 ├── example
 │   ├── cat.js
@@ -282,7 +284,7 @@ So now my module system is working pretty well. Currently, my Hello-Tom&Jerry pr
 └── node-get.js
 ```
 
-We should not need to change anything inside hello.js since we used relative paths to `get` other modules in it. And relative paths would be the same even in this directory structure.
+I shouldn't need to change anything inside `hello.js` since I used relative paths to `get` other modules in it. And relative paths would be the same in this directory structure as well.
 
 Let's see how that works out.
 
@@ -294,7 +296,7 @@ fs.js:640
   return binding.open(pathModule._makeLong(path), stringToFlags(flags), mode);
                  ^
 
-Error: ENOENT: no such file or directory, open './dog.js'
+Error: ENOENT: no such file or directory, open './cat.js'
 ```
 
 I was used to `require` files with paths relative to the module I am calling `require` in, I thought `get` will work the same way. But turns out I need to do a bit of work to get it to work that way.
@@ -303,9 +305,9 @@ Let's first understand why it did not work this way.
 
 The `fs` module is what we use to read the contents in loaded modules from `node-get.js`
 
-fs module actually resolves relative paths relative to the current working directory of the process. I run node-get from `~/projects/node-get`. So when `get('./dog.js')` is called inside `hello.js` where it looks for it is `cwd/dog.js`. Its not going to find a dog.js there because we just moved it into a directory named `example` so its in `cwd/example/dog.js`
+fs module actually resolves relative paths relative to the current working directory of the process. Say I run `node-get` from `cwd/node-get`. So when `get('./cat.js')` is called inside `hello.js`(or anywhere else) where it looks for it is `cwd/cat.js`. It's not going to find a cat.js there because I just moved it into a directory named `example` so it's in `cwd/example/cat.js`
 
-I'd like to get to resolve relative paths the way I am used to with `require`. So I want the `get` global method in each of my module to resolve relative modules relative to its own self. So get in each module should work in a way that is specific to that module. The best way I could achieve this is providing each module with its own instance of `get`.
+I'd like `get` to resolve relative paths the same way `require` does. So I want the `get` global method in each of my modules to resolve relative modules relative to its own self. So `get` in each module should work in a way that is specific to that module. The best way I could achieve this is providing each module with its own specific instance of `get`.
 
 So first I'll change `wrappedFunction` to take a `get` parameter.
 
@@ -335,7 +337,7 @@ const createGet = caller => {
     // Read the content in loaded file
     const loadedJS = fs.readFileSync(filepath);
 
-    // wrap it inside the wrapper function. Its not immediately called now
+    // wrap it inside the wrapper function. It's not immediately called now
     const wrappedJS = wrap(loadedJS)
 
     // Run the content through vm. This returns the wrapped function so we can call it later
@@ -352,7 +354,7 @@ const createGet = caller => {
 
 When a `get` is passed a relative file path, it is resolved relative to the `get` function's `caller`s location.
 
-Heres the latest `node-get.js`.
+Here's the latest `node-get.js`.
 
 ```js
 // node-get.js
@@ -442,7 +444,7 @@ const createGet = caller => {
 }
 ```
 
-It's very simple to implement give. It takes the `value` passed to it and assigns it to `givenValue` which is returned from the outer `get` function. This would mean that only the last give call from a module will take effect.
+It's very simple to implement give. It takes the `value` passed to it and assigns it to `givenValue` which is returned from the outer `get` function. This would mean that only the last `give` call from a module will take effect.
 
 This completes my new module system and I feel quite clever!
 
@@ -460,7 +462,7 @@ give(capitalize)
 ```js
 // cat.js
 const capitalize = get('./utils/capitalize.js')
-const name = 'Jerry'
+const name = 'Tom'
 give(capitalize(`hello, I am a cat named ${name}`));
 ```
 
@@ -475,11 +477,11 @@ give(capitalize(`hello, I am a mouse named ${name}`));
 // hello.js
 console.log('hello world!');
 
-dogText = get('./dog.js');
-console.log(dogText);
-
-catText = get('./cat.js');
+const catText = get('./cat.js');
 console.log(catText);
+
+const mouseText = get('./mouse.js');
+console.log(mouseText);
 ```
 
 Here is the completed `node-get.js`.
@@ -543,13 +545,13 @@ $ node
 '(function (exports, require, module, __filename, __dirname) { somejs\n});'
 ```
 
-See that its signature is quite similar to node-get's wrapper function's.
+See that its signature is quite similar to `node-get`'s wrapper function's.
 
 * It also has a `require` function specific to each module and uses this fact to resolve relative paths relative to the module's location
 
-These similarities are there because `node-get` is built using the understanding I got of Node.js module system by going throgh its source.
+These similarities are there because `node-get` is built using the understanding I got of Node.js module system by going through its source.
 
-And of course, Node.js module system have many additional features as well.
+And of course, Node.js module system has many additional features as well.
 
 * When a module is `require`d, it is cached. So later `require`s to the same module will be faster. This also means that they act as singletons. (A module is executed only once)
 * It has `node_modules`. When `require` is called with an absolute path it looks in several locations including a `node_modules` directory in the root of the project.
@@ -561,4 +563,4 @@ This excercise helped me to get some subtle understanding of Node.js. I hope you
 
 Despite what is commonly said, I really think that JavaScript is alright. I love Node.js for allowing me to do a great many things with it.
 
-I plan to hack deep into Node.js, and write about my experiments with it. Stay tuned!
+I plan to hack deeper into Node.js, and write about my experiments with it. Stay tuned!
