@@ -85,7 +85,7 @@ I am extracting the content of hello.js into a variable named `moduleJS` and exe
 I'll run the program to see how it go.
 
 ```
-node node-get.js hello.js
+$ node node-get.js hello.js
 ```
 
 Aaaand error!
@@ -129,7 +129,7 @@ vm.runInThisContext(moduleJs);
 `hello.js` now have access to any global available to `node-get.js`. It works now!
 
 ```
-[aruna@mbp ~/experiments/node-get]$ node node-get.js hello.js
+$ node node-get.js hello.js
 hello world!
 ```
 
@@ -189,7 +189,7 @@ console.log('hello, I am a mouse.')
 Run `node node-get.js hello.js`; Aaaand...
 
 ```
-[aruna@mbp ~/experiments/node-get]$ node index.js hello.js
+$ node node-get.js hello.js
 hello world!
 hello, I am a cat.
 hello, I am a mouse.
@@ -226,7 +226,7 @@ get('./mouse.js')
 Aaaand run it.
 
 ```
-[aruna@mbp ~/experiments/node-get]$ node node-get.js hello.js
+$ node node-get.js hello.js
 hello world!
 hello, I am a cat named Tom
 evalmachine.<anonymous>:1
